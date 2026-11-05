@@ -38,8 +38,8 @@ All dynamic libraries of the host resolve on a stock Arch install; no extra pack
 ## Quick start
 
 ```bash
-git clone <this repo> ~/Code/chrome-remote-desktop-wayland
-cd ~/Code/chrome-remote-desktop-wayland
+git clone https://github.com/zeozeozeo/chrome-remote-desktop-wayland
+cd chrome-remote-desktop-wayland
 
 sudo ./setup.sh                 # installs, enrolls (prompts), routes, restarts, verifies
 ```
@@ -58,12 +58,12 @@ Then connect at <https://remotedesktop.google.com/access> (or the mobile app).
 
 ### Step by step
 
-| Step | Command | What it does |
-|---|---|---|
-| 1 | `sudo ./install.sh` | Downloads CRD `157.0.8103.19`, verifies size+sha256, extracts with `bsdtar`, installs payload to `/opt/google/chrome-remote-desktop`, systemd units, WirePlumber profile, Arch-compatible `/etc/pam.d/chrome-remote-desktop`, and the `_crd_*` sandbox users. |
-| 2 | `sudo ./enroll.sh <AUTH_CODE> [PIN] [NAME]` | Runs `start-host --host-type=gdm-managed`, writes `/etc/chrome-remote-desktop/host.json` (0600) and enables+starts `chrome-remote-desktop.service`. Must run **before** step 3. |
-| 3 | `sudo ./setup.sh` (or `printf '{"sessionUser":"%s"}\n' "$USER" \| sudo tee /etc/chrome-remote-desktop/session_routing.json && sudo systemctl restart chrome-remote-desktop`) | Switches the daemon to `UserDesktopSessionBackend` (attach to the live session). |
-| 4 | `./verify.sh` | Probes service, enrollment, routing, PAM, sandbox users, backend selection and live session state. Exits non-zero on failure. |
+| Step | Command                                                                                                                                                                      | What it does                                                                                                                                                                                                                                                  |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `sudo ./install.sh`                                                                                                                                                          | Downloads CRD `157.0.8103.19`, verifies size+sha256, extracts with `bsdtar`, installs payload to `/opt/google/chrome-remote-desktop`, systemd units, WirePlumber profile, Arch-compatible `/etc/pam.d/chrome-remote-desktop`, and the `_crd_*` sandbox users. |
+| 2    | `sudo ./enroll.sh <AUTH_CODE> [PIN] [NAME]`                                                                                                                                  | Runs `start-host --host-type=gdm-managed`, writes `/etc/chrome-remote-desktop/host.json` (0600) and enables+starts `chrome-remote-desktop.service`. Must run **before** step 3.                                                                               |
+| 3    | `sudo ./setup.sh` (or `printf '{"sessionUser":"%s"}\n' "$USER" \| sudo tee /etc/chrome-remote-desktop/session_routing.json && sudo systemctl restart chrome-remote-desktop`) | Switches the daemon to `UserDesktopSessionBackend` (attach to the live session).                                                                                                                                                                              |
+| 4    | `./verify.sh`                                                                                                                                                                | Probes service, enrollment, routing, PAM, sandbox users, backend selection and live session state. Exits non-zero on failure.                                                                                                                                 |
 
 `enroll.sh` refuses to run when `session_routing.json` already exists, because the
 gdm-managed start hook rejects that (and the reverse order is the point of step 3).
@@ -94,7 +94,7 @@ client ──WebRTC──> chrome-remote-desktop-host --type=daemon      (root)
    `Starting Mutter remote desktop session` (`gnome_remote_desktop_session.cc:109`).
    There is **no** GNOME "allow remote control / pick a screen" dialog on this path.
 4. Capture and input then run through Mutter/portal (PipeWire, `ConnectToEIS`/libei), so
-   the remote client sees the *live* local desktop: same windows, same panel.
+   the remote client sees the _live_ local desktop: same windows, same panel.
 
 Login is standard CRD: PIN (SPAKE2) against your Google account, `pair_spake2_curve25519`
 falling back to `spake2_curve25519`.
@@ -102,13 +102,13 @@ falling back to `spake2_curve25519`.
 ## Performance notes
 
 The host encodes **AV1** by default (libaom `3.15.2-80`), exactly like CRD on Windows, so
-"use AV1" is already the case. Linux differs in *how* it encodes:
+"use AV1" is already the case. Linux differs in _how_ it encodes:
 
-| | Windows host | This Linux host |
-|---|---|---|
-| Codec | AV1 / VP9 / H264 | AV1 / VP9 / VP8 |
-| Hardware encode | yes (GPU) | **no** — software only |
-| Encoder choice | negotiated by client | negotiated by client |
+|                 | Windows host         | This Linux host        |
+| --------------- | -------------------- | ---------------------- |
+| Codec           | AV1 / VP9 / H264     | AV1 / VP9 / VP8        |
+| Hardware encode | yes (GPU)            | **no** — software only |
+| Encoder choice  | negotiated by client | negotiated by client   |
 
 `libremoting_core.so` contains only `Creating AV1 encoder`, `Creating VP9 encoder`,
 `Creating VP8 encoder`; `vainfo` shows `VAEntrypointEncSlice` (H264) and
@@ -166,14 +166,14 @@ Idle behaviour: with no client connected, the host holds no desktop process and 
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| `setup.sh` | Orchestrator: install → enroll → route → restart → verify. Idempotent. |
-| `install.sh` | Installs the pinned `.deb` payload without dpkg (size+sha256 pinned). |
-| `enroll.sh` | One-time host registration with `--host-type=gdm-managed`. |
+| File                           | Purpose                                                                                                                            |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `setup.sh`                     | Orchestrator: install → enroll → route → restart → verify. Idempotent.                                                             |
+| `install.sh`                   | Installs the pinned `.deb` payload without dpkg (size+sha256 pinned).                                                              |
+| `enroll.sh`                    | One-time host registration with `--host-type=gdm-managed`.                                                                         |
 | `session_routing.json.example` | Template for `{"sessionUser": "<user>"}`. The real `session_routing.json` is per-machine, generated by `setup.sh`, and gitignored. |
-| `verify.sh` | Read-only probe, exits non-zero on any failed expectation. |
-| `debug/verbose.conf` | Optional systemd drop-in enabling `--v=1` host logging. |
+| `verify.sh`                    | Read-only probe, exits non-zero on any failed expectation.                                                                         |
+| `debug/verbose.conf`           | Optional systemd drop-in enabling `--v=1` host logging.                                                                            |
 
 `.gitignore` excludes per-machine state (`session_routing.json`, logs, scratch files) so a
 clone never carries another host's session user.
