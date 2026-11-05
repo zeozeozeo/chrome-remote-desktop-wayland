@@ -1,0 +1,17 @@
+# Per-machine output of setup.sh: contains this host's session user.
+# Use session_routing.json.example as the tracked template instead.
+session_routing.json
+session_routing.json.tmp
+
+# Local scratch
+*.log
+*.tmp
+*.bak
+*.orig
+core
+core.*
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
